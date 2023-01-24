@@ -5,7 +5,7 @@ import OrderRestResource from './api/orderRestResource.js';
 import { createServer } from 'lwr';
 import PubSubApiClient from 'salesforce-pubsub-api-client';
 
-const ORDER_CDC_TOPIC = '/data/Order__ChangeEvent';
+//const ORDER_CDC_TOPIC = '/data/Order__ChangeEvent';
 const CASE_CDC_TOPIC = '/data/CaseChangeEvent';
 const MANUFACTURING_PE_TOPIC = '/event/Manufacturing_Event__e';
 
@@ -37,27 +37,27 @@ async function start() {
         Configuration.getSfUsername()
     );
     // Subscribe to Change Data Capture events on Reseller Order records
-    const orderCdcEmitter = await pubSubClient.subscribe(ORDER_CDC_TOPIC, 10);
-    orderCdcEmitter.on('data', (cdcEvent) => {
-        const status = cdcEvent.payload.Status__c?.string;
-        const header = cdcEvent.payload.ChangeEventHeader;
-        // Filter events related to order status updates
-        if (header.changeType === 'UPDATE' && status) {
-            header.recordIds.forEach((orderId) => {
-                // Notify client via WebSocket
-                const message = {
-                    type: 'manufacturingEvent',
-                    data: {
-                        orderId,
-                        status
-                    }
-                };
-                wss.broadcast(JSON.stringify(message));
-            });
-        }
-    });
+    // const orderCdcEmitter = await pubSubClient.subscribe(ORDER_CDC_TOPIC, 10);
+    // orderCdcEmitter.on('data', (cdcEvent) => {
+    //     const status = cdcEvent.payload.Status__c?.string;
+    //     const header = cdcEvent.payload.ChangeEventHeader;
+    //     // Filter events related to order status updates
+    //     if (header.changeType === 'UPDATE' && status) {
+    //         header.recordIds.forEach((orderId) => {
+    //             // Notify client via WebSocket
+    //             const message = {
+    //                 type: 'manufacturingEvent',
+    //                 data: {
+    //                     orderId,
+    //                     status
+    //                 }
+    //             };
+    //             wss.broadcast(JSON.stringify(message));
+    //         });
+    //     }
+    // });
     const caseCdcEmitter = await pubSubClient.subscribe(CASE_CDC_TOPIC, 100);
-    orderCdcEmitter.on('data', (cdcEvent) => {
+    caseCdcEmitter.on('data', (cdcEvent) => {
         const status = cdcEvent.payload.Status__c?.string;
         const header = cdcEvent.payload.ChangeEventHeader;
         // Filter events related to order status updates
@@ -78,22 +78,22 @@ async function start() {
 
     // Handle incoming WS events
     wss.addMessageListener(async (message) => {
-        const { orderId, status } = message.data;
-        const eventData = {
-            CreatedDate: Date.now(),
-            CreatedById: sfClient.client.userInfo.id,
-            Order_Id__c: { string: orderId },
-            Status__c: { string: status }
-        };
-        const { caseId, status1 } = message1.data;
+        // const { orderId, status } = message.data;
+        // const eventData = {
+        //     CreatedDate: Date.now(),
+        //     CreatedById: sfClient.client.userInfo.id,
+        //     Order_Id__c: { string: orderId },
+        //     Status__c: { string: status }
+        // };
+        const { Id, status } = message1.data;
         const eventData1 = {
             CreatedDate: Date.now(),
             CreatedById: sfClient.client.userInfo.id,
-            Case_Id__c: { string: caseId },
+            Order_Id__c: { string: Id },
             Status__c: { string: status }
         };
-        await pubSubClient.publish(MANUFACTURING_PE_TOPIC, eventData);
-        console.log('Published Manufacturing_Event__e', eventData);
+        //await pubSubClient.publish(MANUFACTURING_PE_TOPIC, eventData1);
+        console.log('Published Manufacturing_Event__e', eventData1);
     });
 
     // Handle incoming WS events
