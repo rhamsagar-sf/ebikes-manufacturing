@@ -6,6 +6,7 @@ import { createServer } from 'lwr';
 import PubSubApiClient from 'salesforce-pubsub-api-client';
 
 const ORDER_CDC_TOPIC = '/data/Order__ChangeEvent';
+const CASE_CDC_TOPIC = '/data/CaseChangeEvent';
 const MANUFACTURING_PE_TOPIC = '/event/Manufacturing_Event__e';
 
 async function start() {
@@ -55,6 +56,25 @@ async function start() {
             });
         }
     });
+    const caseCdcEmitter = await pubSubClient.subscribe(CASE_CDC_TOPIC, 100);
+    orderCdcEmitter.on('data', (cdcEvent) => {
+        const status = cdcEvent.payload.Status__c?.string;
+        const header = cdcEvent.payload.ChangeEventHeader;
+        // Filter events related to order status updates
+       // if (header.changeType === 'UPDATE' && status) {
+            header.recordIds.forEach((caseId) => {
+                // Notify client via WebSocket
+                const message1 = {
+                    type: 'caseEvent',
+                    data: {
+                        caseId,
+                        status
+                    }
+                };
+                wss.broadcast(JSON.stringify(message1));
+            });
+        //}
+    });
 
     // Handle incoming WS events
     wss.addMessageListener(async (message) => {
@@ -65,9 +85,23 @@ async function start() {
             Order_Id__c: { string: orderId },
             Status__c: { string: status }
         };
+        const { caseId, status1 } = message1.data;
+        const eventData1 = {
+            CreatedDate: Date.now(),
+            CreatedById: sfClient.client.userInfo.id,
+            Case_Id__c: { string: caseId },
+            Status__c: { string: status }
+        };
         await pubSubClient.publish(MANUFACTURING_PE_TOPIC, eventData);
         console.log('Published Manufacturing_Event__e', eventData);
     });
+
+    // Handle incoming WS events
+    /* wss.addMessageListener(async (message1) => {
+        
+        await pubSubClient.publish(MANUFACTURING_PE_TOPIC, eventData);
+        console.log('Published Manufacturing_Event__e', eventData);
+    });*/
 
     // Setup REST resources
     const orderRest = new OrderRestResource(sfClient.client);

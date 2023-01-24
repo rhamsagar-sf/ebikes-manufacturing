@@ -30,6 +30,7 @@ export default class Configuration {
     }
 
     static getSfSecuredPassword() {
-        return process.env.SALESFORCE_PASSWORD + process.env.SALESFORCE_TOKEN;
+        return process.env.SALESFORCE_PASSWORD
+       // return process.env.SALESFORCE_PASSWORD + process.env.SALESFORCE_TOKEN;
     }
 }
