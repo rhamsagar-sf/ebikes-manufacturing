@@ -56,7 +56,7 @@ async function start() {
     //         });
     //     }
     // });
-    const caseCdcEmitter = await pubSubClient.subscribe(CASE_CDC_TOPIC, 100);
+    const caseCdcEmitter = await pubSubClient.subscribe(CASE_CDC_TOPIC, 5);
     caseCdcEmitter.on('data', (cdcEvent) => {
         const status = cdcEvent.payload.Status__c?.string;
         const header = cdcEvent.payload.ChangeEventHeader;
