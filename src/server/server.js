@@ -60,6 +60,8 @@ async function start() {
     caseCdcEmitter.on('data', (cdcEvent) => {
         const status = cdcEvent.payload.Status__c?.string;
         const header = cdcEvent.payload.ChangeEventHeader;
+        console.log('header', header)
+        console.log('header', header.recordIds)
         // Filter events related to order status updates
        // if (header.changeType === 'UPDATE' && status) {
             header.recordIds.forEach((caseId) => {
@@ -93,7 +95,7 @@ async function start() {
             Status__c: { string: status }
         };
         //await pubSubClient.publish(MANUFACTURING_PE_TOPIC, eventData1);
-        console.log('Published Manufacturing_Event__e', eventData1);
+        //console.log('Published Manufacturing_Event__e', eventData1);
     });
 
     // Handle incoming WS events
